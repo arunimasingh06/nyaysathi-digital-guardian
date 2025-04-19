@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Calculator, IndianRupee, Scale } from "lucide-react";
+import { Calculator, IndianRupee, Scale, Receipt } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,13 +20,27 @@ export function CourtFeeCalculator() {
     if (!state || !caseType || !amount) {
       toast({
         title: "Missing Information",
-        description: "Please fill in all required fields.",
+        description: "Please fill in all required fields to calculate applicable court fees.",
         variant: "destructive",
       });
       return;
     }
     
     const calculatedFee = calculateFee(state, caseType, Number(amount));
+    
+    if (calculatedFee.totalFee === 0) {
+      toast({
+        title: "Fee Schedule Not Found",
+        description: `No predefined fee structure for ${caseType} in ${state} jurisdiction.`,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Fee Calculation Complete",
+        description: `Total applicable court fee: ₹${calculatedFee.totalFee.toLocaleString()}`,
+      });
+    }
+    
     setResult(calculatedFee);
   };
   
@@ -47,10 +61,10 @@ export function CourtFeeCalculator() {
         <div className="grid gap-6">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="state">State</Label>
+              <Label htmlFor="state">Jurisdiction</Label>
               <Select value={state} onValueChange={setState}>
                 <SelectTrigger id="state">
-                  <SelectValue placeholder="Select state" />
+                  <SelectValue placeholder="Select state jurisdiction" />
                 </SelectTrigger>
                 <SelectContent className="max-h-[200px]">
                   {indianStates.map((state) => (
@@ -63,10 +77,10 @@ export function CourtFeeCalculator() {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="case-type">Case Type</Label>
+              <Label htmlFor="case-type">Matter Type</Label>
               <Select value={caseType} onValueChange={setCaseType}>
                 <SelectTrigger id="case-type">
-                  <SelectValue placeholder="Select case type" />
+                  <SelectValue placeholder="Select case category" />
                 </SelectTrigger>
                 <SelectContent>
                   {caseTypes.map((type) => (
@@ -80,13 +94,13 @@ export function CourtFeeCalculator() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="claim-amount">Claim Amount (₹)</Label>
+            <Label htmlFor="claim-amount">Suit Valuation (₹)</Label>
             <div className="relative">
               <IndianRupee className="absolute left-3 top-2.5 h-5 w-5 text-gray-500" />
               <Input
                 id="claim-amount"
                 type="number"
-                placeholder="Enter amount"
+                placeholder="Enter disputed amount/claim value"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 className="pl-10"
@@ -100,13 +114,16 @@ export function CourtFeeCalculator() {
             disabled={!state || !caseType || !amount}
           >
             <Calculator className="mr-2 h-4 w-4" />
-            Calculate Fees
+            Calculate Court Fees
           </Button>
         </div>
         
         {result && (
           <div className="mt-6 rounded-lg border p-4 bg-gray-50">
-            <h3 className="font-medium text-center mb-3">Fee Breakdown</h3>
+            <h3 className="flex items-center justify-center gap-2 font-medium text-center mb-3">
+              <Receipt className="h-4 w-4" />
+              Fee Assessment Schedule
+            </h3>
             <div className="space-y-2">
               {result.breakdown.map((item, index) => (
                 <div key={index} className="flex justify-between text-sm">
@@ -115,7 +132,7 @@ export function CourtFeeCalculator() {
               ))}
               <Separator className="my-2" />
               <div className="flex justify-between font-medium">
-                <span>Total:</span>
+                <span>Aggregate Court Fee Payable:</span>
                 <span className="text-indigo-600">₹{result.totalFee.toLocaleString()}</span>
               </div>
             </div>
